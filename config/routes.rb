@@ -2,6 +2,7 @@ Rails.application.routes.draw do
   get '/base/:action' => 'base'
 
   get '/forums/recent' => 'sb_posts#index', :as => :recent_forum_posts
+  get '/photos/recent' => 'photos#recent', :as => :recent_photos
 
   resources :authorizations
   match '/auth/:provider/callback' => 'authorizations#create', :as => :callback
@@ -48,6 +49,8 @@ Rails.application.routes.draw do
     get 'events' => 'admin#events', :as => :admin_events
     get 'clear_cache' => 'admin#clear_cache', :as => :admin_clear_cache
     get 'subscribers(.:format)' => "admin#subscribers", :as => :admin_subscribers
+    get 'activate_user' => "admin#activate_user", :as => :admin_activate_user
+    get 'deactivate_user' => 'admin#deactivate_user', :as => :admin_deactivate_user
     
     resources :pages, :as => :admin_pages do
       member do
@@ -70,6 +73,7 @@ Rails.application.routes.draw do
   post '/resend_activation' => 'users#resend_activation', :as => :resend_activation
   
   get '/new_clipping' => 'clippings#new_clipping'
+  post '/load_images_from_uri' => 'clippings#load_images_from_uri', :format => 'js'  
   get '/clippings(/page/:page)' => 'clippings#site_index', :as => :site_clippings
   get '/clippings.rss' => 'clippings#site_index', :as => :rss_site_clippings, :format => 'rss'
   
@@ -128,8 +132,13 @@ Rails.application.routes.draw do
     resources :favorites
   end
   scope "/:commentable_type/:commentable_id" do
-    resources :comments, :as => :commentable_comments
+    resources :comments, :as => :commentable_comments do 
+      member do
+        get :unsubscribe
+      end      
+    end
   end
+  resources :comments
   delete '/comments/delete_selected' => 'comments#delete_selected', :as => :delete_selected_comments
   
   resources :homepage_features
@@ -200,6 +209,7 @@ Rails.application.routes.draw do
         post :send_to_friend
         put :update_views
         get :category_tips_update
+        get :preview
       end
     end
 
@@ -224,11 +234,7 @@ Rails.application.routes.draw do
       end
     end
 
-    resources :comments do 
-      member do
-        get :unsubscribe
-      end
-    end
+    resources :comments
     resources :photo_manager
 
     resources :albums do
